@@ -8,17 +8,17 @@ import pickle
 import random
 import io
 
-from ydata_profiling import ProfileReport
-from streamlit_pandas_profiling import st_profile_report
+# from ydata_profiling import ProfileReport
+# from streamlit_pandas_profiling import st_profile_report
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score, mean_squared_error as MSE
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import Lasso
-from sklearn.model_selection import GridSearchCV
-from sklearn.linear_model import ElasticNet
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.linear_model import Ridge
+# from sklearn.metrics import r2_score, mean_squared_error as MSE
+# from sklearn.linear_model import LinearRegression
+# from sklearn.preprocessing import StandardScaler
+# from sklearn.linear_model import Lasso
+# from sklearn.model_selection import GridSearchCV
+# from sklearn.linear_model import ElasticNet
+# from sklearn.preprocessing import OneHotEncoder
+# from sklearn.linear_model import Ridge
 
 random.seed(42)
 np.random.seed(42)
