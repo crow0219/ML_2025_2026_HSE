@@ -140,14 +140,14 @@ if df_train is not None and df_test is not None:
             st.write(f'Колонка: {name}')
             st.write(f'кол-во пропусков: {df_test_isna.loc[name]}')
 
-    st.subheader("Автоотчет средствами YData Profiling") 
-    profile = ProfileReport(df_train, title="Profiling Report")
-    profile.to_file("report.html")
+    # st.subheader("Автоотчет средствами YData Profiling") 
+    # profile = ProfileReport(df_train, title="Profiling Report")
+    # profile.to_file("report.html")
 
-    with open("report.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
+    # with open("report.html", "r", encoding="utf-8") as f:
+        # html_content = f.read()
 
-    st.components.v1.html(html_content, height=500, scrolling=True)
+    # st.components.v1.html(html_content, height=500, scrolling=True)
 
 
     duplicated_objects = df_train[df_train.columns.difference(['selling_price'])].duplicated()
@@ -211,7 +211,7 @@ if df_train is not None and df_test is not None:
         st.write('- также на медиану заменим аномальный пробег автомобиля в столбце km_driven')
 
     st.header("Инфографика")
-    st.subheader("📊 Pairplot Визуализации")
+    st.subheader("Pairplot визуализации")
 
     sns.set_theme(style="whitegrid")
     pairplot = sns.pairplot(df_train, hue="selling_price", palette="viridis", diag_kind="kde", corner=True)
@@ -224,7 +224,7 @@ if df_train is not None and df_test is not None:
     st.pyplot(pairplot.fig)
 
 
-    st.subheader("📊 Тепловая карта корреляций")
+    st.subheader("Тепловая карта корреляций")
     corr_matrix = df_train.select_dtypes(include='number').corr()
 
     plt.figure(figsize=(8, 8))
