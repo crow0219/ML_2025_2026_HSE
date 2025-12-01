@@ -7,6 +7,7 @@ import plotly.express as px
 import pickle
 import random
 import io
+import os
 
 # from ydata_profiling import ProfileReport
 # from streamlit_pandas_profiling import st_profile_report
@@ -293,7 +294,8 @@ if 'medians_saved' not in st.session_state:
 else:
     @st.cache_resource
     def load_model():
-        with open('car_price_models_complete.pkl', 'rb') as f:
+        path = os.path.join(os.path.dirname(__file__), 'data', 'car_price_models_complete.pkl')
+        with open(path, 'rb') as f:
             model = pickle.load(f)
         return model
 
@@ -380,7 +382,8 @@ import pandas as pd
 st.header("Визуализация весов модели")
 @st.cache_resource
 def load_model():
-    with open('car_price_models_complete.pkl', 'rb') as f:
+    path = os.path.join(os.path.dirname(__file__), 'data', 'car_price_models_complete.pkl')
+    with open(path, 'rb') as f:
         model = pickle.load(f)
     return model
 
