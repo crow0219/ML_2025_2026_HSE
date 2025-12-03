@@ -9,17 +9,7 @@ import random
 import io
 import os
 
-# from ydata_profiling import ProfileReport
-# from streamlit_pandas_profiling import st_profile_report
 from sklearn.model_selection import train_test_split
-# from sklearn.metrics import r2_score, mean_squared_error as MSE
-# from sklearn.linear_model import LinearRegression
-# from sklearn.preprocessing import StandardScaler
-# from sklearn.linear_model import Lasso
-# from sklearn.model_selection import GridSearchCV
-# from sklearn.linear_model import ElasticNet
-# from sklearn.preprocessing import OneHotEncoder
-# from sklearn.linear_model import Ridge
 
 random.seed(42)
 np.random.seed(42)
@@ -140,16 +130,6 @@ if df_train is not None and df_test is not None:
         with col:
             st.write(f'Колонка: {name}')
             st.write(f'кол-во пропусков: {df_test_isna.loc[name]}')
-
-    # st.subheader("Автоотчет средствами YData Profiling") 
-    # profile = ProfileReport(df_train, title="Profiling Report")
-    # profile.to_file("report.html")
-
-    # with open("report.html", "r", encoding="utf-8") as f:
-        # html_content = f.read()
-
-    # st.components.v1.html(html_content, height=500, scrolling=True)
-
 
     duplicated_objects = df_train[df_train.columns.difference(['selling_price'])].duplicated()
     st.write(f'Объектов с одинаковым признаковым описанием в тренировочном датафрейме: {duplicated_objects.sum()}')
@@ -280,112 +260,89 @@ if df_train is not None and df_test is not None:
     st.pyplot(fig)
     plt.close(fig)
 
-    if 'medians_saved' not in st.session_state:
-        st.session_state.mileage_median = mileage_median
-        st.session_state.engine_median = engine_median
-        st.session_state.max_power_median = max_power_median
-        st.session_state.seats_median = seats_median
-        st.session_state.km_driven_median = km_driven_median
-        st.session_state.medians_saved = True
-
 st.header("Применение обученной модели регрессии к новым данным для предсказания стоимости автомобиля")
-if 'medians_saved' not in st.session_state:
-        st.error("Сначала выполните EDA анализ для вычисления медиан!")
-else:
-    @st.cache_resource
-    def load_model():
-        path = os.path.join(os.path.dirname(__file__), 'data', 'car_price_models_complete.pkl')
-        with open(path, 'rb') as f:
-            model = pickle.load(f)
-        return model
 
-    def preprocessing(df_preprocess, 
-                        mileage_median=st.session_state.mileage_median, 
-                        engine_median=st.session_state.engine_median, 
-                        max_power_median=st.session_state.max_power_median, 
-                        seats_median=st.session_state.seats_median, 
-                        km_driven_median=st.session_state.km_driven_median):
-        
-        df_preprocess['km_driven'] = df_preprocess['km_driven'].apply(lambda x: km_driven_median if x == 2360457.00 else x)
-
-        df_preprocess['mileage'] = (df_preprocess['mileage'].apply(lambda x: x.split()[0] if not isinstance(x, float) else x).astype(float))
-        df_preprocess['mileage'] = df_preprocess['mileage'].fillna(mileage_median)
-        df_preprocess['mileage'] = df_preprocess['mileage'].apply(lambda x: mileage_median if x == 0 else x)
-
-        df_preprocess['engine'] = df_preprocess['engine'].apply(lambda x: x.split()[0] if not isinstance(x, float) else x).astype(float)
-        df_preprocess['engine'] = df_preprocess['engine'].fillna(engine_median)
-        
-        df_preprocess['max_power'] = df_preprocess['max_power'].apply(lambda x: x.split()[0].strip() if not isinstance(x, float) else x)
-        df_preprocess['max_power'] = df_preprocess['max_power'].apply(lambda x: 0 if x == 'bhp' else x).astype(float) 
-
-        df_preprocess['max_power'] = df_preprocess['max_power'].fillna(max_power_median)
-        df_preprocess['max_power'] = df_preprocess['max_power'].apply(lambda x: max_power_median if x == 0 else x)
-
-        df_preprocess['seats'] = df_preprocess['seats'].fillna(seats_median)
-        
-        df_preprocess[['engine', 'seats']] = df_preprocess[['engine', 'seats']].astype(int)
-
-        df_preprocess.drop(['torque', 'name'], axis=1, inplace=True)
-
-        return df_preprocess
-
-    up_file = st.file_uploader("Загрузите датасет для предсказания стоимости", type=["csv"], key="pred_file")
-    if up_file is not None:
-        df_predict = pd.read_csv(up_file)
-
-        st.text('Первые строки вашего датасета до предобработки')
-        df_predict.drop(['Unnamed: 0'], axis=1, inplace=True)
-        st.dataframe(df_predict.head())
-
-        
-        predict_model = load_model()
-        best_model = predict_model['models']['grid_search_ridge_reg'].best_estimator_
-
-        df_prepr = df_predict.copy()
-        df_prepr = preprocessing(df_prepr)
-
-
-        numerical_cols = df_prepr.select_dtypes(include='number').columns.tolist()
-        scaler_2 = predict_model['scalers']['numerical_scaler_2']
-        df_prepr[numerical_cols] = scaler_2.transform(df_prepr[numerical_cols])
-
-
-        st.text('Первые строки вашего датасета после предобработки')
-        st.dataframe(df_prepr.head())
-
-
-        encoder = predict_model['encoders']['onehot_encoder']
-        cat_cols = predict_model['encoders']['categorical_columns']
-
-        df_cat = encoder.transform(df_prepr[cat_cols])
-        df_cat = pd.DataFrame(df_cat, columns=encoder.get_feature_names_out(cat_cols))
-
-        df_num = df_prepr.drop(columns=cat_cols)
-
-        df_prepr = pd.concat([df_num.reset_index(drop=True), df_cat.reset_index(drop=True)], axis=1)
-
-
-        predict = best_model.predict(df_prepr)
-
-        st.write('Предсказанные стоимости автомобилей')
-        df_predict['selling_price'] = predict
-        st.dataframe(df_predict)
-
-
-st.header("Визуализация весов моделей")
-
-import streamlit as st
-import matplotlib.pyplot as plt
-import pickle
-import pandas as pd
-
-st.header("Визуализация весов модели")
 @st.cache_resource
 def load_model():
     path = os.path.join(os.path.dirname(__file__), 'data', 'car_price_models_complete.pkl')
     with open(path, 'rb') as f:
         model = pickle.load(f)
     return model
+
+predict_model = load_model()
+
+def preprocessing(df_preprocess, 
+                    mileage_median=predict_model['medians']['mileage_median'], 
+                    engine_median=predict_model['medians']['engine_median'], 
+                    max_power_median=predict_model['medians']['max_power_median'], 
+                    seats_median=predict_model['medians']['seats_median'], 
+                    km_driven_median=predict_model['medians']['km_driven_median']):
+    
+    df_preprocess['km_driven'] = df_preprocess['km_driven'].apply(lambda x: km_driven_median if x == 2360457.00 else x)
+
+    df_preprocess['mileage'] = (df_preprocess['mileage'].apply(lambda x: x.split()[0] if not isinstance(x, float) else x).astype(float))
+    df_preprocess['mileage'] = df_preprocess['mileage'].fillna(mileage_median)
+    df_preprocess['mileage'] = df_preprocess['mileage'].apply(lambda x: mileage_median if x == 0 else x)
+
+    df_preprocess['engine'] = df_preprocess['engine'].apply(lambda x: x.split()[0] if not isinstance(x, float) else x).astype(float)
+    df_preprocess['engine'] = df_preprocess['engine'].fillna(engine_median)
+    
+    df_preprocess['max_power'] = df_preprocess['max_power'].apply(lambda x: x.split()[0].strip() if not isinstance(x, float) else x)
+    df_preprocess['max_power'] = df_preprocess['max_power'].apply(lambda x: 0 if x == 'bhp' else x).astype(float) 
+
+    df_preprocess['max_power'] = df_preprocess['max_power'].fillna(max_power_median)
+    df_preprocess['max_power'] = df_preprocess['max_power'].apply(lambda x: max_power_median if x == 0 else x)
+
+    df_preprocess['seats'] = df_preprocess['seats'].fillna(seats_median)
+    
+    df_preprocess[['engine', 'seats']] = df_preprocess[['engine', 'seats']].astype(int)
+
+    df_preprocess.drop(['torque', 'name'], axis=1, inplace=True)
+
+    return df_preprocess
+
+up_file = st.file_uploader("Загрузите датасет для предсказания стоимости", type=["csv"], key="pred_file")
+if up_file is not None:
+    df_predict = pd.read_csv(up_file)
+
+    st.text('Первые строки вашего датасета до предобработки')
+    df_predict.drop(['Unnamed: 0'], axis=1, inplace=True)
+    st.dataframe(df_predict.head())
+
+    best_model = predict_model['models']['grid_search_ridge_reg'].best_estimator_
+
+    df_prepr = df_predict.copy()
+    df_prepr = preprocessing(df_prepr)
+
+
+    numerical_cols = df_prepr.select_dtypes(include='number').columns.tolist()
+    scaler_2 = predict_model['scalers']['numerical_scaler_2']
+    df_prepr[numerical_cols] = scaler_2.transform(df_prepr[numerical_cols])
+
+
+    st.text('Первые строки вашего датасета после предобработки')
+    st.dataframe(df_prepr.head())
+
+
+    encoder = predict_model['encoders']['onehot_encoder']
+    cat_cols = predict_model['encoders']['categorical_columns']
+
+    df_cat = encoder.transform(df_prepr[cat_cols])
+    df_cat = pd.DataFrame(df_cat, columns=encoder.get_feature_names_out(cat_cols))
+
+    df_num = df_prepr.drop(columns=cat_cols)
+
+    df_prepr = pd.concat([df_num.reset_index(drop=True), df_cat.reset_index(drop=True)], axis=1)
+
+
+    predict = best_model.predict(df_prepr)
+
+    st.write('Предсказанные стоимости автомобилей')
+    df_predict['selling_price'] = predict
+    st.dataframe(df_predict)
+
+
+st.header("Визуализация весов модели")
 
 if st.button("Показать веса модели"):
     model = load_model()
@@ -409,8 +366,3 @@ if st.button("Показать веса модели"):
 
     plt.tight_layout()
     st.pyplot(fig)
-
-
-
-
-
